@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'package:bloc/bloc.dart';
 import 'package:tic_tac_toe/game_event.dart';
 import 'package:tic_tac_toe/game_state.dart';
@@ -14,38 +15,102 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     [0, 4, 8],
     [2, 4, 6],
   ];
-  GameBloc() : super(InitialiseGameState()) {
-    on<OnBoxTappedEvent>((event, emit) {
-      final currentState = state;
-      final updatedBoard = List<Player>.from(state.gameBoard);
-      if (updatedBoard[event.index] != Player.none) return;
-      if (currentState is GameOnGoingState) {
-        updatedBoard[event.index] =
-            currentState.isNextPlayerX ? Player.x : Player.o;
-        emit(_checkWin(updatedBoard, !currentState.isNextPlayerX));
-      } else if (currentState is InitialiseGameState) {
-        updatedBoard[event.index] = Player.x;
-        emit(GameOnGoingState(updatedBoard, isNextPlayerX: false));
-      }
-    });
 
-    on<GameResetEvent>((event, emit) {
-      emit(InitialiseGameState());
-    });
+  GameBloc() : super(InitialiseGameState()) {
+    on<OnBoxTappedEvent>(_onBoxTapped);
+    on<GameResetEvent>((event, emit) => emit(InitialiseGameState()));
   }
 
-  GameState _checkWin(List<Player> board, bool isNextPlayerX) {
-    for (int i = 0; i < _winningCombos.length; i++) {
-      final player = board[_winningCombos[i][0]];
-      if (board[_winningCombos[i][0]] != Player.none &&
-          board[_winningCombos[i][0]] == board[_winningCombos[i][1]] &&
-          board[_winningCombos[i][1]] == board[_winningCombos[i][2]]) {
-        return GameWinState(board, player: player);
+  Future<void> _onBoxTapped(
+    OnBoxTappedEvent event,
+    Emitter<GameState> emit,
+  ) async {
+    final currentState = state;
+
+    if (currentState is! GameOnGoingState &&
+        currentState is! InitialiseGameState) {
+      return;
+    }
+
+    final Queue<int> currentXQueue = Queue<int>.from(
+      currentState.playerXQueue ?? Queue<int>(),
+    );
+    final Queue<int> currentOQueue = Queue<int>.from(
+      currentState.playerOQueue ?? Queue<int>(),
+    );
+    final updatedBoard = List<Player>.from(currentState.gameBoard);
+
+    final isPlayerX =
+        currentState is InitialiseGameState ||
+        (currentState is GameOnGoingState && currentState.isNextPlayerX);
+
+    // Prevent overwriting already filled box
+    if (updatedBoard[event.index] != Player.none) return;
+
+    final activeQueue = isPlayerX ? currentXQueue : currentOQueue;
+    final opponentQueue = isPlayerX ? currentOQueue : currentXQueue;
+
+    // If current player has 3, remove the oldest one
+    if (activeQueue.length == 3) {
+      final int toRemove = activeQueue.removeLast();
+      updatedBoard[toRemove] = Player.none;
+    }
+
+    // Place current player's new mark
+    updatedBoard[event.index] = isPlayerX ? Player.x : Player.o;
+    activeQueue.addFirst(event.index);
+
+    // Highlight opponent's oldest mark (for next move)
+    int? nextPendingRemoval;
+    if (opponentQueue.length == 3) {
+      nextPendingRemoval = opponentQueue.last;
+    }
+
+    emit(
+      _checkWin(
+        updatedBoard,
+        currentXQueue,
+        currentOQueue,
+        !isPlayerX,
+        nextPendingRemoval,
+      ),
+    );
+  }
+
+  GameState _checkWin(
+    List<Player> board,
+    Queue<int> playerXQueue,
+    Queue<int> playerOQueue,
+    bool isNextPlayerX,
+    int? pendingRemovalBox,
+  ) {
+    for (final combo in _winningCombos) {
+      final Player a = board[combo[0]];
+      final Player b = board[combo[1]];
+      final Player c = board[combo[2]];
+
+      if (a != Player.none && a == b && b == c) {
+        return GameWinState(
+          board,
+          playerXQueue,
+          playerOQueue,
+          player: a,
+          winingIndices: combo,
+        );
       }
     }
-    if (board.contains(Player.none)) {
-      return GameOnGoingState(board, isNextPlayerX: !isNextPlayerX);
+
+    final hasEmpty = board.any((cell) => cell == Player.none);
+    if (hasEmpty) {
+      return GameOnGoingState(
+        board,
+        playerXQueue,
+        playerOQueue,
+        isNextPlayerX: isNextPlayerX,
+        pendingRemovalBox: pendingRemovalBox,
+      );
     }
-    return GameDrawState(board);
+
+    return GameDrawState(board, playerXQueue, playerOQueue);
   }
 }

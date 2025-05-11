@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tic_tac_toe/game_bloc.dart';
+import 'package:tic_tac_toe/game_event.dart';
 import 'package:tic_tac_toe/game_state.dart';
+import 'package:tic_tac_toe/player.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,18 +19,40 @@ void main() {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<GameBloc, GameState>(
       builder: (context, state) {
+        var gameTitle = "";
+
+        if (state is GameOnGoingState) {
+          gameTitle = state.isNextPlayerX ? "Player X turn" : "Player O turn";
+        } else if (state is InitialiseGameState) {
+          gameTitle = "Player X turn";
+        } else if (state is GameDrawState) {
+          gameTitle = "Game Draw! Play again?";
+        } else if (state is GameWinState) {
+          gameTitle =
+              state.player == Player.x ? "Player X won" : "Player O won";
+        }
+
         return Scaffold(
           appBar: AppBar(title: Text("Tic Tac Toe"), centerTitle: true),
           body: Center(
             child: Column(
               children: [
+                Text(
+                  gameTitle,
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                ),
                 SizedBox(
                   height:
                       MediaQuery.of(context).size.height *
@@ -37,6 +61,7 @@ class MyApp extends StatelessWidget {
                       MediaQuery.of(context).size.width *
                       0.9, // takes up 90% of the screen width
                   child: GridView.builder(
+                    physics: NeverScrollableScrollPhysics(),
                     padding: EdgeInsets.all(16),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
@@ -46,18 +71,33 @@ class MyApp extends StatelessWidget {
                     itemCount: 9,
                     itemBuilder: (context, index) {
                       return GestureDetector(
-                        onTap: () {},
+                        onTap: () {
+                          context.read<GameBloc>().add(
+                            OnBoxTappedEvent(index: index),
+                          );
+                        },
                         child: Container(
                           decoration: BoxDecoration(
                             border: Border.all(color: Colors.black12),
-                            color: Colors.grey[300],
+                            color:
+                                (state is GameWinState &&
+                                        (state.winingIndices[0] == index ||
+                                            state.winingIndices[1] == index ||
+                                            state.winingIndices[2] == index))
+                                    ? Colors.green
+                                    : Colors.grey[300],
                           ),
                           child: Center(
                             child: Text(
-                              "X",
+                              state.gameBoard[index].symbol,
                               style: GoogleFonts.balooDa2(
                                 fontSize: 42,
                                 fontWeight: FontWeight.bold,
+                                color:
+                                    (state is GameOnGoingState &&
+                                            state.pendingRemovalBox == index)
+                                        ? Colors.red
+                                        : Colors.black,
                               ),
                             ),
                           ),
@@ -69,7 +109,7 @@ class MyApp extends StatelessWidget {
                 SizedBox(height: MediaQuery.of(context).size.height * 0.1),
                 ElevatedButton(
                   onPressed: () {
-                    // Reset logic here
+                    context.read<GameBloc>().add(GameResetEvent());
                   },
                   child: Text('Reset'),
                 ),
