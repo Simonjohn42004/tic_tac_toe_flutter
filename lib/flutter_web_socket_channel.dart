@@ -1,32 +1,54 @@
+import 'dart:async';
+
+import 'package:tic_tac_toe/room.dart';
+import 'package:tic_tac_toe/web_socket_client.dart';
 import 'package:tic_tac_toe/web_socket_provider.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 
 class FlutterWebSocketChannel extends WebSocketProvider {
+  final WebSocketClient _client;
+
+  FlutterWebSocketChannel({required WebSocketClient client}) : _client = client;
+
   @override
-  Future<void> connectToRoom(String roomId) async {
-   
+  Future<Room> createRoom() {
+    final room = _client.createRoom();
+    return room;
   }
 
   @override
-  Future<void> disconnect() {
-    // TODO: implement disconnect
-    throw UnimplementedError();
+  Future<void> joinRoom(Room room) async{
+    return _client.joinRoom(room);
   }
 
   @override
-  bool isConnected() {
-    // TODO: implement isConnected
-    throw UnimplementedError();
+  Stream receiveData(
+    void Function(int index) onIndexReceived,
+    void Function(String message) onStringMessage,
+  ) {
+    final controller = StreamController<dynamic>();
+
+    _client.receiveData(
+      onIndexReceived: (index) {
+        onIndexReceived(index); // Trigger the callback
+        controller.add(index); // Forward to stream
+      },
+      onStringMessage: (message) {
+        onStringMessage(message); // Trigger the callback
+        controller.add(message); // Forward to stream
+      },
+    );
+
+    return controller.stream;
   }
 
   @override
-  // TODO: implement onMove
-  Stream<int> get onMove => throw UnimplementedError();
+  void sendData(Map<String, dynamic> data) {
+    _client.sendData(data);
+  }
 
   @override
-  Future<void> sendMove(int index) {
-    // TODO: implement sendMove
-    throw UnimplementedError();
+  void close() {
+    _client.close();
   }
 }
 

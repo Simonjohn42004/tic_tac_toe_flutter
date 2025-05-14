@@ -1,16 +1,25 @@
+import 'dart:async';
+
+import 'package:tic_tac_toe/room.dart';
+
 abstract class WebSocketProvider {
-  /// Connects to the WebSocket room using the roomId
-  Future<void> connectToRoom(String roomId);
+  /// Connects to the server, creates a new room, and joins its WebSocket.
+  Future<Room> createRoom();
 
-  /// Sends a move to the server (index: 0–8)
-  Future<void> sendMove(int index);
+  /// Join a room that was already created by another user
+  Future<void> joinRoom(Room room);
 
-  /// Stream to listen for incoming messages (e.g., opponent's move)
-  Stream<int> get onMove;
+  /// Sends a move or any other structured data to the WebSocket.
+  void sendData(Map<String, dynamic> data);
 
-  /// Disconnects the socket from the server
-  Future<void> disconnect();
+  /// Listens to incoming data from the WebSocket.
+  /// [onIndexReceived] handles game moves, [onStringMessage] handles plain messages.
+  /// More type-safe: emits a structured event.
+  Stream<dynamic> receiveData(
+    void Function(int index) onIndexReceived,
+    void Function(String message) onStringMessage,
+  );
 
-  /// Check if WebSocket is connected
-  bool isConnected();
+  /// Closes the WebSocket connection gracefully.
+  void close();
 }
