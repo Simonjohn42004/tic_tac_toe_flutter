@@ -1,8 +1,9 @@
 import 'dart:async';
 
-import 'package:tic_tac_toe/room.dart';
+import 'package:tic_tac_toe/data_models/game_message.dart';
+import 'package:tic_tac_toe/data_models/room.dart';
 
-abstract class WebSocketProvider {
+abstract class GameDataProvider {
   /// Connects to the server, creates a new room, and joins its WebSocket.
   Future<Room> createRoom();
 
@@ -15,10 +16,7 @@ abstract class WebSocketProvider {
   /// Listens to incoming data from the WebSocket.
   /// [onIndexReceived] handles game moves, [onStringMessage] handles plain messages.
   /// More type-safe: emits a structured event.
-  Stream<dynamic> receiveData(
-    void Function(int index) onIndexReceived,
-    void Function(String message) onStringMessage,
-  );
+  Stream<GameMessage> receiveData();
 
   /// Closes the WebSocket connection gracefully.
   void close();

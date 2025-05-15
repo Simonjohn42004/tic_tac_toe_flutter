@@ -1,10 +1,12 @@
 import 'dart:collection';
 import 'package:bloc/bloc.dart';
-import 'package:tic_tac_toe/game_event.dart';
-import 'package:tic_tac_toe/game_state.dart';
-import 'package:tic_tac_toe/player.dart';
+import 'package:tic_tac_toe/backend/game_data/game_data_provider.dart';
+import 'package:tic_tac_toe/bloc/game_bloc/game_event.dart';
+import 'package:tic_tac_toe/bloc/game_bloc/game_state.dart';
+import 'package:tic_tac_toe/data_models/player.dart';
 
 class GameBloc extends Bloc<GameEvent, GameState> {
+  final GameDataProvider _dataProvider;
   final _winningCombos = [
     [0, 1, 2],
     [3, 4, 5],
@@ -16,7 +18,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     [2, 4, 6],
   ];
 
-  GameBloc() : super(InitialiseGameState()) {
+  GameBloc(this._dataProvider) : super(InitialiseGameState()) {
     on<OnBoxTappedEvent>(_onBoxTapped);
     on<GameResetEvent>((event, emit) => emit(InitialiseGameState()));
   }

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tic_tac_toe/game_bloc.dart';
-import 'package:tic_tac_toe/game_event.dart';
-import 'package:tic_tac_toe/game_state.dart';
-import 'package:tic_tac_toe/player.dart';
+import 'package:tic_tac_toe/bloc/game_bloc/game_bloc.dart';
+import 'package:tic_tac_toe/bloc/game_bloc/game_event.dart';
+import 'package:tic_tac_toe/bloc/game_bloc/game_state.dart';
+import 'package:tic_tac_toe/data_models/player.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

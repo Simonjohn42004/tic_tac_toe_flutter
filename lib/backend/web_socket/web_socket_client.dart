@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:tic_tac_toe/room.dart';
-import 'package:tic_tac_toe/websocket_exceptions.dart';
+import 'package:tic_tac_toe/data_models/room.dart';
+import 'package:tic_tac_toe/backend/web_socket/websocket_exceptions.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class WebSocketClient {
@@ -23,7 +23,7 @@ class WebSocketClient {
   try {
     // 1. Validate room existence via HTTP POST
     final checkRoomUri = Uri.parse("$hostName$checkRoomPath/${room.roomId}");
-    final response = await http.post(checkRoomUri);
+    final response = await http.get(checkRoomUri);
 
     if (response.statusCode != 200) {
       throw RoomNotFoundException(); // You could define a more specific exception

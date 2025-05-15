@@ -1,5 +1,5 @@
 import 'dart:collection';
-import 'package:tic_tac_toe/player.dart';
+import 'package:tic_tac_toe/data_models/player.dart';
 
 // Main state management for the game, we use the gameBoard for providing the current board to each state
 abstract class GameState {
