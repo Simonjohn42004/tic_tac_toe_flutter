@@ -3,6 +3,7 @@ import 'package:bloc/bloc.dart';
 import 'package:tic_tac_toe/backend/game_data/game_data_provider.dart';
 import 'package:tic_tac_toe/bloc/game_bloc/game_event.dart';
 import 'package:tic_tac_toe/bloc/game_bloc/game_state.dart';
+import 'package:tic_tac_toe/data_models/game_message.dart';
 import 'package:tic_tac_toe/data_models/player.dart';
 
 class GameBloc extends Bloc<GameEvent, GameState> {
@@ -18,9 +19,31 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     [2, 4, 6],
   ];
 
+  late final Stream<GameMessage> _messageStream;
+
   GameBloc(this._dataProvider) : super(InitialiseGameState()) {
     on<OnBoxTappedEvent>(_onBoxTapped);
-    on<GameResetEvent>((event, emit) => emit(InitialiseGameState()));
+    on<GameResetEvent>((event, emit) {
+      if (!event.fromRemote) {
+        _dataProvider.sendData({"index": -1});
+      }
+      emit(InitialiseGameState());
+    });
+
+    _messageStream = _dataProvider.receiveData();
+    _listenToIncomingMoves();
+  }
+
+  void _listenToIncomingMoves() {
+    _messageStream.listen((event) {
+      if (event is MoveMessage) {
+        if (event.index == -1) {
+          add(GameResetEvent(fromRemote: true));
+          return;
+        }
+        add(OnBoxTappedEvent(index: event.index));
+      }
+    });
   }
 
   Future<void> _onBoxTapped(
@@ -77,6 +100,9 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         nextPendingRemoval,
       ),
     );
+
+    // Notify the other side of the move
+    _dataProvider.sendData({"index": event.index});
   }
 
   GameState _checkWin(

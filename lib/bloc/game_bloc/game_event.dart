@@ -14,4 +14,8 @@ class OnBoxTappedEvent extends GameEvent {
   List<Object?> get props => [index];
 }
 
-class GameResetEvent extends GameEvent {}
+class GameResetEvent extends GameEvent {
+  final bool fromRemote;
+  GameResetEvent({this.fromRemote = false});
+}
+
