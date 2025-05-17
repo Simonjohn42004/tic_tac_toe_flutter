@@ -7,6 +7,7 @@ import 'package:tic_tac_toe/bloc/game_bloc/game_state.dart';
 import 'package:tic_tac_toe/data_models/player.dart';
 
 class GameView extends StatefulWidget {
+  
   const GameView({super.key});
 
   @override
@@ -16,6 +17,12 @@ class GameView extends StatefulWidget {
 class _GameViewState extends State<GameView> {
   @override
   Widget build(BuildContext context) {
+    try {
+    final bloc = context.watch<GameBloc>();
+    print("GameBloc found: $bloc");
+  } catch (e) {
+    print("GameBloc NOT found in GameView: $e");
+  }
     return BlocBuilder<GameBloc, GameState>(
       builder: (context, state) {
         var gameTitle = "";

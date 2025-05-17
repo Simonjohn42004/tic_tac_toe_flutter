@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tic_tac_toe/app_constants.dart';
+import 'package:tic_tac_toe/utilities/app_constants.dart';
 import 'package:tic_tac_toe/backend/game_data/flutter_web_socket_provider.dart';
 import 'package:tic_tac_toe/backend/game_data/offline_provider.dart';
 import 'package:tic_tac_toe/backend/web_socket/web_socket_client.dart';
+import 'package:tic_tac_toe/bloc/game_bloc/game_bloc.dart';
 import 'package:tic_tac_toe/bloc/web_connection_bloc/connection_bloc.dart';
 import 'package:tic_tac_toe/views/connection_page_view.dart';
 import 'package:tic_tac_toe/views/game_view.dart';
@@ -59,9 +60,9 @@ class _MyAppState extends State<MyApp> {
                   context,
                   MaterialPageRoute(
                     builder:
-                        (context) => BlocProvider(
-                          create: (context) => ConnectionBloc(provider),
-                          child: const ConnectionPage(),
+                        (_) => BlocProvider(
+                          create: (_) => GameBloc(provider),
+                          child: const GameView(),
                         ),
                   ),
                 );
@@ -72,13 +73,15 @@ class _MyAppState extends State<MyApp> {
             SizedBox(height: 16),
             TextButton(
               onPressed: () {
-                final provider = FlutterWebSocketProvider(client: WebSocketClient());
+                final provider = FlutterWebSocketProvider(
+                  client: WebSocketClient(),
+                );
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder:
-                        (context) => BlocProvider(
-                          create: (context) => ConnectionBloc(provider),
+                        (_) => BlocProvider(
+                          create: (_) => ConnectionBloc(provider),
                           child: const ConnectionPage(),
                         ),
                   ),

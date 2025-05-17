@@ -1,28 +1,34 @@
-abstract class ConnectionState {}
+import 'package:tic_tac_toe/backend/game_data/game_data_provider.dart';
 
-class IdleState extends ConnectionState{}
+abstract class NetworkConnectionState {}
 
-class CreatingRoomState extends ConnectionState {}
+class IdleState extends NetworkConnectionState {}
 
-class RoomCreatedSuccessfullyState extends ConnectionState {
+class CreatingRoomState extends NetworkConnectionState {}
+
+class RoomCreatedSuccessfullyState extends NetworkConnectionState {
   final int roomId;
+  final GameDataProvider provider;
 
-  RoomCreatedSuccessfullyState({required this.roomId});
+  RoomCreatedSuccessfullyState({required this.roomId, required this.provider});
 }
 
-class WaitingForOpponentState extends ConnectionState{}
+class WaitingForOpponentState extends NetworkConnectionState {}
 
-class JoiningRoomState extends ConnectionState{}
+class JoiningRoomState extends NetworkConnectionState {}
 
-class OpponentJoinedState extends ConnectionState{}
+class OpponentJoinedState extends NetworkConnectionState {
+  final GameDataProvider provider;
 
-class ConnectionErrorState extends ConnectionState {
+  OpponentJoinedState({required this.provider});
+}
+
+class ConnectionErrorState extends NetworkConnectionState {
   final String error;
   ConnectionErrorState({required this.error});
 }
 
-class DisconnectedState extends ConnectionState {
+class DisconnectedState extends NetworkConnectionState {
   final String reason;
   DisconnectedState({this.reason = "Disconnected from server"});
 }
-

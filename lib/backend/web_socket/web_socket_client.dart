@@ -11,6 +11,7 @@ class WebSocketClient {
   Future<Room> createRoom() async {
     try {
       final room = await _createAndGetRoom();
+      print("this is after i create the room with the room id");
       final wsUri = Uri.parse("$websocketName${room.roomId}");
       _channel = WebSocketChannel.connect(wsUri);
       return room;
@@ -20,24 +21,22 @@ class WebSocketClient {
   }
 
   Future<void> joinRoom(Room room) async {
-  try {
-    // 1. Validate room existence via HTTP POST
-    final checkRoomUri = Uri.parse("$hostName$checkRoomPath/${room.roomId}");
-    final response = await http.get(checkRoomUri);
+    try {
+      // 1. Validate room existence via HTTP POST
+      final checkRoomUri = Uri.parse("$hostName$checkRoomPath/${room.roomId}");
+      final response = await http.get(checkRoomUri);
 
-    if (response.statusCode != 200) {
-      throw RoomNotFoundException(); // You could define a more specific exception
+      if (response.statusCode != 200) {
+        throw RoomNotFoundException(); // You could define a more specific exception
+      }
+
+      // 2. If valid, connect to the WebSocket
+      final wsUri = Uri.parse("$websocketName/${room.roomId}");
+      _channel = WebSocketChannel.connect(wsUri);
+    } catch (e) {
+      throw WebsocketConnectingException(); // Your custom exception
     }
-
-    // 2. If valid, connect to the WebSocket
-    final wsUri = Uri.parse("$websocketName/${room.roomId}");
-    _channel = WebSocketChannel.connect(wsUri);
-
-  } catch (e) {
-    throw WebsocketConnectingException(); // Your custom exception
   }
-}
-
 
   /// Listens to WebSocket messages and delegates based on content.
   void receiveData({
@@ -79,10 +78,16 @@ class WebSocketClient {
   /// Helper to create a room by calling the backend.
   Future<Room> _createAndGetRoom() async {
     try {
+      print("i am in the create room of the web socket client block");
       final response = await http.get(Uri.http(hostName, createRoomPath));
+      print("hi");
+      print(response.statusCode);
       if (response.statusCode != 200) throw GenericException();
       return Room.fromJson(jsonDecode(response.body));
     } catch (_) {
+      print(
+        "i am here in the catch block of the create room which throws generic exception",
+      );
       throw GenericException();
     }
   }
@@ -90,7 +95,4 @@ class WebSocketClient {
   WebSocketChannel get channel => _channel;
 }
 
-final hostName = "localhost:8080";
-final createRoomPath = "/create-room";
-final websocketName = "ws://localhost:8080/play/";
-final checkRoomPath = "/join-room/";
+
