@@ -7,17 +7,17 @@ abstract class GameDataProvider {
   /// Connects to the server, creates a new room, and joins its WebSocket.
   Future<Room> createRoom();
 
-  /// Join a room that was already created by another user
+  /// Join a room that was already created by another user.
   Future<void> joinRoom(Room room);
 
-  /// Sends a move or any other structured data to the WebSocket.
-  void sendData(Map<String, dynamic> data);
+  /// Sends a structured game message to the WebSocket.
+  void sendMessage(GameMessage message);
 
-  /// Listens to incoming data from the WebSocket.
-  /// [onIndexReceived] handles game moves, [onStringMessage] handles plain messages.
-  /// More type-safe: emits a structured event.
+  /// Listens to incoming structured game messages from the WebSocket.
+  /// Emits messages like moves, text messages, game over signals, etc.
   Stream<GameMessage> receiveData();
 
   /// Closes the WebSocket connection gracefully.
   void close();
 }
+

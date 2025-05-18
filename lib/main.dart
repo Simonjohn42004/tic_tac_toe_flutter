@@ -1,39 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import 'package:tic_tac_toe/utilities/app_constants.dart';
 import 'package:tic_tac_toe/backend/game_data/flutter_web_socket_provider.dart';
 import 'package:tic_tac_toe/backend/game_data/offline_provider.dart';
 import 'package:tic_tac_toe/backend/web_socket/web_socket_client.dart';
+
 import 'package:tic_tac_toe/bloc/game_bloc/game_bloc.dart';
 import 'package:tic_tac_toe/bloc/web_connection_bloc/connection_bloc.dart';
+
 import 'package:tic_tac_toe/views/connection_page_view.dart';
 import 'package:tic_tac_toe/views/game_view.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(
-    MaterialApp(
-      title: 'Flutter Demo',
-      routes: {
-        connectionPageRoute: (context) => GameView(),
-      }, //TODO implement the connection page and replace it instead of game view
+  runApp(const TicTacToeApp());
+}
+
+class TicTacToeApp extends StatelessWidget {
+  const TicTacToeApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Tic Tac Toe',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const MyApp(),
-    ),
-  );
+      // Set main home page
+      home: const HomePage(),
+
+      // Define routes
+      routes: {
+        connectionPageRoute: (context) => const ConnectionPage(),
+      },
+    );
+  }
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+/// Home screen with options for online/offline game
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
 
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,27 +60,39 @@ class _MyAppState extends State<MyApp> {
                 fontWeight: FontWeight.bold,
                 fontSize: 32,
               ),
+              textAlign: TextAlign.center,
             ),
-            SizedBox(height: 16),
-            TextButton(
+            const SizedBox(height: 32),
+
+            // Offline Button
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
               onPressed: () {
                 final provider = OfflineGameDataProvider();
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder:
-                        (_) => BlocProvider(
-                          create: (_) => GameBloc(provider),
-                          child: const GameView(),
-                        ),
+                    builder: (_) => BlocProvider(
+                      create: (_) => GameBloc(provider),
+                      child: const GameView(),
+                    ),
                   ),
                 );
               },
-              child: Text("Play Offline"),
+              child: const Text("Play Offline", style: TextStyle(fontSize: 18)),
             ),
 
-            SizedBox(height: 16),
-            TextButton(
+            const SizedBox(height: 16),
+
+            // Online Button
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
               onPressed: () {
                 final provider = FlutterWebSocketProvider(
                   client: WebSocketClient(),
@@ -79,15 +100,14 @@ class _MyAppState extends State<MyApp> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder:
-                        (_) => BlocProvider(
-                          create: (_) => ConnectionBloc(provider),
-                          child: const ConnectionPage(),
-                        ),
+                    builder: (_) => BlocProvider(
+                      create: (_) => ConnectionBloc(provider),
+                      child: const ConnectionPage(),
+                    ),
                   ),
                 );
               },
-              child: Text("Play Online"),
+              child: const Text("Play Online", style: TextStyle(fontSize: 18)),
             ),
           ],
         ),

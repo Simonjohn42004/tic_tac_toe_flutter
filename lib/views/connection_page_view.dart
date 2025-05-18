@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:tic_tac_toe/bloc/game_bloc/game_bloc.dart';
 import 'package:tic_tac_toe/bloc/web_connection_bloc/connection_bloc.dart';
 import 'package:tic_tac_toe/bloc/web_connection_bloc/connection_event.dart';
 import 'package:tic_tac_toe/bloc/web_connection_bloc/connection_state.dart';
+
 import 'package:tic_tac_toe/utilities/join_room_alert_box.dart';
 import 'package:tic_tac_toe/views/error_alert_dialog.dart';
 import 'package:tic_tac_toe/views/game_view.dart';
@@ -16,18 +18,22 @@ class ConnectionPage extends StatefulWidget {
 }
 
 class _ConnectionPageState extends State<ConnectionPage> {
+  bool _errorShown = false;
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<ConnectionBloc, NetworkConnectionState>(
-      listener: (context, state) {
-        if ((state is RoomCreatedSuccessfullyState ||
-            state is OpponentJoinedState)) {
+      listener: (context, state) async {
+        // Handle successful room creation or joining
+        if (state is RoomCreatedSuccessfullyState ||
+            state is OpponentJoinedState) {
           final provider =
-              (state is RoomCreatedSuccessfullyState)
+              state is RoomCreatedSuccessfullyState
                   ? state.provider
                   : (state as OpponentJoinedState).provider;
 
-          Navigator.push(
+          // Navigate to game view with GameBloc injected
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder:
@@ -38,18 +44,18 @@ class _ConnectionPageState extends State<ConnectionPage> {
             ),
           );
         }
+
+        // Handle error state (once)
+        if (state is ConnectionErrorState && !_errorShown) {
+          _errorShown = true;
+          await showErrorDialogBox(context);
+          _errorShown = false;
+        }
       },
       child: BlocBuilder<ConnectionBloc, NetworkConnectionState>(
         builder: (context, state) {
-          if (state is CreatingRoomState || state is JoiningRoomState) {
-            print("I am here lol");
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-          if (state is ConnectionErrorState) {
-            showErrorDialogBox(context);
-          }
+          final isLoading =
+              state is CreatingRoomState || state is JoiningRoomState;
 
           return Scaffold(
             appBar: AppBar(
@@ -60,31 +66,53 @@ class _ConnectionPageState extends State<ConnectionPage> {
               backgroundColor: Colors.green,
             ),
             body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<ConnectionBloc>().add(
-                        CreateRoomRequestedEvent(),
-                      );
-                      print("Room Created");
-                    },
-                    child: const Text("Create Room"),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () async {
-                      await showJoinRoomAlertBox(context, (roomId) {
-                        context.read<ConnectionBloc>().add(
-                          JoinRoomRequestedEvent(roomId: roomId),
-                        );
-                      });
-                    },
-                    child: const Text("Join Room"),
-                  ),
-                ],
-              ),
+              child:
+                  isLoading
+                      ? const CircularProgressIndicator()
+                      : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton(
+                            onPressed: () {
+                              context.read<ConnectionBloc>().add(
+                                CreateRoomRequestedEvent(),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                            ),
+                            child: const Text(
+                              "Create Room",
+                              style: TextStyle(fontSize: 18),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () async {
+                              await showJoinRoomAlertBox(context, (roomId) {
+                                context.read<ConnectionBloc>().add(
+                                  JoinRoomRequestedEvent(roomId: roomId),
+                                );
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                            ),
+                            child: const Text(
+                              "Join Room",
+                              style: TextStyle(fontSize: 18),
+                            ),
+                          ),
+                        ],
+                      ),
             ),
           );
         },
