@@ -1,6 +1,6 @@
 final connectionPageRoute = "connection-page";
 // Network constants
-final hostName = "192.168.190.94:8080"; // Replace with your server IP or domain
+final hostName = "homely-request-production.up.railway.app"; 
 final createRoomPath = "/create-room";
 final checkRoomPath = "/join-room/";
-final websocketName = "ws://192.168.190.94:8080/play/";
+final websocketName = "wss://homely-request-production.up.railway.app/play/";

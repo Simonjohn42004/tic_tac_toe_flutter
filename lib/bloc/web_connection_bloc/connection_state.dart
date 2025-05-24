@@ -13,14 +13,13 @@ class RoomCreatedSuccessfullyState extends NetworkConnectionState {
   RoomCreatedSuccessfullyState({required this.roomId, required this.provider});
 }
 
-class WaitingForOpponentState extends NetworkConnectionState {}
-
 class JoiningRoomState extends NetworkConnectionState {}
 
 class OpponentJoinedState extends NetworkConnectionState {
   final GameDataProvider provider;
+  final bool isRemote;
 
-  OpponentJoinedState({required this.provider});
+  OpponentJoinedState({required this.provider, required this.isRemote});
 }
 
 class ConnectionErrorState extends NetworkConnectionState {

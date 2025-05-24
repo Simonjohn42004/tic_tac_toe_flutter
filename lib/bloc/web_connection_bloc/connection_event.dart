@@ -12,3 +12,9 @@ class ConnectionLostEvent extends ConnectionEvent {
   final String reason;
   ConnectionLostEvent({required this.reason});
 }
+
+class OpponentJoinedEvent extends ConnectionEvent {
+  final bool isRemote;
+  OpponentJoinedEvent({required this.isRemote});
+}
+

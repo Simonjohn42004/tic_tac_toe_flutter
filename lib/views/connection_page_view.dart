@@ -8,6 +8,7 @@ import 'package:tic_tac_toe/bloc/web_connection_bloc/connection_state.dart';
 import 'package:tic_tac_toe/data_models/player.dart';
 
 import 'package:tic_tac_toe/utilities/join_room_alert_box.dart';
+import 'package:tic_tac_toe/utilities/show_waiting_dialog.dart';
 import 'package:tic_tac_toe/views/error_alert_dialog.dart';
 import 'package:tic_tac_toe/views/game_view.dart';
 
@@ -25,32 +26,60 @@ class _ConnectionPageState extends State<ConnectionPage> {
   Widget build(BuildContext context) {
     return BlocListener<ConnectionBloc, NetworkConnectionState>(
       listener: (context, state) async {
-        // Handle successful room creation or joining
-        if (state is RoomCreatedSuccessfullyState ||
-            state is OpponentJoinedState) {
-          final provider =
-              state is RoomCreatedSuccessfullyState
-                  ? state.provider
-                  : (state as OpponentJoinedState).provider;
+        if (state is OpponentJoinedState) {
+          final provider = state.provider;
 
-          // Navigate to game view with GameBloc injected
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder:
-                  (_) => BlocProvider(
-                    create: (_) => GameBloc(provider, state is RoomCreatedSuccessfullyState ? Player.x : Player.o),
+                  (context) => MultiBlocProvider(
+                    providers: [
+                      BlocProvider.value(value: context.read<ConnectionBloc>()),
+                      BlocProvider(create: (_) => GameBloc(provider, Player.o)),
+                    ],
                     child: const GameView(),
                   ),
             ),
           );
         }
 
-        // Handle error state (once)
+        if (state is RoomCreatedSuccessfullyState) {
+          final provider = state.provider;
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) => MultiBlocProvider(
+                    providers: [
+                      BlocProvider.value(value: context.read<ConnectionBloc>()),
+                      BlocProvider(create: (_) => GameBloc(provider, Player.x)),
+                    ],
+                    child: const GameView(),
+                  ),
+            ),
+          );
+
+          showWaitingDialog(context, state.roomId);
+        }
+
         if (state is ConnectionErrorState && !_errorShown) {
           _errorShown = true;
-          await showErrorDialogBox(context);
+          await showErrorDialogBox(context, state.error);
           _errorShown = false;
+        }
+
+        // 👇 NEW: Handle disconnection gracefully
+        if (state is DisconnectedState && !_errorShown) {
+          _errorShown = true;
+          await showErrorDialogBox(context, state.reason);
+          _errorShown = false;
+
+          // Return to connection page root
+          if (mounted) {
+            Navigator.popUntil(context, (route) => route.isFirst);
+          }
         }
       },
       child: BlocBuilder<ConnectionBloc, NetworkConnectionState>(

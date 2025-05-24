@@ -35,7 +35,23 @@ class FlutterWebSocketProvider extends GameDataProvider {
       },
       onStringMessage: (message) {
         print("[WebSocketProvider] Received text message: $message");
-        controller.add(TextMessage(message: message));
+      controller.add(TextMessage(message: message));
+      },
+      onOpponentJoined: () {
+        print("[WebSocketProvider] Opponent joined!");
+        controller.add(OpponentJoinedMessage());
+      },
+      onRoomFull: () {
+        print("[WebSocketProvider] Room is full!");
+        controller.add(RoomFullMessage());
+      },
+      onGameStart: () {
+        print("[WebSocketProvider] Game started!");
+        controller.add(GameStartMessage());
+      },
+      onOpponentDisconnected: () {
+        print("[WebSocketProvider] Opponent disconnected!");
+        controller.add(OpponentDisconnectedMessage());
       },
     );
 
@@ -45,7 +61,7 @@ class FlutterWebSocketProvider extends GameDataProvider {
       close();
     };
 
-    return controller.stream;
+    return controller.stream.asBroadcastStream();
   }
 
   @override
@@ -65,3 +81,4 @@ class FlutterWebSocketProvider extends GameDataProvider {
     return true;
   }
 }
+ 

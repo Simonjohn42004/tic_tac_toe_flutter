@@ -24,18 +24,24 @@ class TicTacToeApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Tic Tac Toe',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<ConnectionBloc>(
+          create:
+              (_) => ConnectionBloc(
+                FlutterWebSocketProvider(client: WebSocketClient()),
+              ),
+        ),
+        // You can add more global blocs here if needed
+      ],
+      child: MaterialApp(
+        title: 'Tic Tac Toe',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        ),
+        home: const HomePage(),
+        routes: {connectionPageRoute: (context) => const ConnectionPage()},
       ),
-      // Set main home page
-      home: const HomePage(),
-
-      // Define routes
-      routes: {
-        connectionPageRoute: (context) => const ConnectionPage(),
-      },
     );
   }
 }
@@ -69,17 +75,21 @@ class HomePage extends StatelessWidget {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
               onPressed: () {
                 final provider = OfflineGameDataProvider();
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => BlocProvider(
-                      create: (_) => GameBloc(provider, Player.x),
-                      child: const GameView(),
-                    ),
+                    builder:
+                        (_) => BlocProvider(
+                          create: (_) => GameBloc(provider, Player.x),
+                          child: const GameView(),
+                        ),
                   ),
                 );
               },
@@ -92,21 +102,15 @@ class HomePage extends StatelessWidget {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
               onPressed: () {
-                final provider = FlutterWebSocketProvider(
-                  client: WebSocketClient(),
-                  
-                );
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => BlocProvider(
-                      create: (_) => ConnectionBloc(provider),
-                      child: const ConnectionPage(),
-                    ),
-                  ),
+                  MaterialPageRoute(builder: (_) => const ConnectionPage()),
                 );
               },
               child: const Text("Play Online", style: TextStyle(fontSize: 18)),

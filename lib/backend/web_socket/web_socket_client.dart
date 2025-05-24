@@ -4,48 +4,63 @@ import 'package:tic_tac_toe/data_models/room.dart';
 import 'package:tic_tac_toe/backend/web_socket/websocket_exceptions.dart';
 import 'package:tic_tac_toe/utilities/app_constants.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-
 class WebSocketClient {
-  late final WebSocketChannel _channel;
+  WebSocketChannel? _channel;
+  Stream<dynamic>? _broadcastStream;
 
-  /// Creates a room and connects to its WebSocket endpoint.
   Future<Room> createRoom() async {
     try {
       final room = await _createAndGetRoom();
-      final wsUri = Uri.parse("$websocketName${room.roomId}");
-      _channel = WebSocketChannel.connect(wsUri);
+      await _connectToRoom(room.roomId);
       print("Player connected to room ${room.roomId}!");
       return room;
     } catch (e) {
+      print("WebSocket connection error: $e");
       throw WebsocketConnectingException();
     }
   }
 
-  /// Joins an existing room after verifying its existence.
   Future<void> joinRoom(Room room) async {
     try {
       final response = await http.get(
-        Uri.http(hostName, "$checkRoomPath/${room.roomId}"),
+        Uri.https(hostName, "$checkRoomPath${room.roomId}"),
       );
 
       if (response.statusCode != 200) {
         throw RoomNotFoundException();
       }
 
-      final wsUri = Uri.parse("$websocketName${room.roomId}");
-      _channel = WebSocketChannel.connect(wsUri);
+      await _connectToRoom(room.roomId);
       print("Joined room ${room.roomId} successfully!");
     } catch (e) {
       throw WebsocketConnectingException();
     }
   }
 
-  /// Listens to WebSocket messages and delegates based on message type.
+  Future<void> _connectToRoom(int roomId) async {
+    // Close existing connection if any
+    await _channel?.sink.close();
+
+    final wsUri = Uri.parse("$websocketName$roomId");
+    print("Connecting to WebSocket: $wsUri");
+
+    _channel = WebSocketChannel.connect(wsUri);
+    _broadcastStream = _channel!.stream.asBroadcastStream();
+  }
+
   void receiveData({
     required void Function(int index) onIndexReceived,
     required void Function(String message) onStringMessage,
+    required void Function()? onOpponentJoined,
+    required void Function()? onRoomFull,
+    required void Function()? onGameStart,
+    required void Function()? onOpponentDisconnected,
   }) {
-    _channel.stream.listen(
+    if (_broadcastStream == null) {
+      throw StateError("WebSocket stream not initialized. Call createRoom or joinRoom first.");
+    }
+
+    _broadcastStream!.listen(
       (message) {
         try {
           print("Received message from stream: $message");
@@ -57,7 +72,23 @@ class WebSocketClient {
             if (type == "move" && decoded["index"] is int) {
               onIndexReceived(decoded["index"]);
             } else if (type == "message" && decoded["text"] is String) {
-              onStringMessage(decoded["text"]);
+              final text = decoded["text"];
+              switch (text) {
+                case "opponent_joined":
+                  onOpponentJoined?.call();
+                  break;
+                case "room_full":
+                  onRoomFull?.call();
+                  break;
+                case "game_start":
+                  onGameStart?.call();
+                  break;
+                case "opponent_disconnected":
+                  onOpponentDisconnected?.call();
+                  break;
+                default:
+                  onStringMessage(text);
+              }
             } else {
               onStringMessage("Unknown message format received.");
             }
@@ -78,28 +109,31 @@ class WebSocketClient {
     );
   }
 
-  /// Sends a JSON-encoded message to the server.
   void sendData(Map<String, dynamic> data) {
     print("Sending data: $data");
-    _channel.sink.add(jsonEncode(data));
+    _channel?.sink.add(jsonEncode(data));
   }
 
-  /// Closes the WebSocket connection cleanly.
   void close() {
-    _channel.sink.close();
+    _channel?.sink.close();
   }
 
-  /// Helper to create a room by calling the backend.
   Future<Room> _createAndGetRoom() async {
     try {
-      final response = await http.get(Uri.http(hostName, createRoomPath));
+      print("Trying to create a room...");
+      final uri = Uri.https(hostName, createRoomPath);
+      final response = await http.get(uri);
+      print("Response status: ${response.statusCode}");
+      print("Body: ${response.body}");
+
       if (response.statusCode != 200) throw GenericException();
       return Room.fromJson(jsonDecode(response.body));
-    } catch (_) {
+    } catch (e, stackTrace) {
+      print("Error occurred: $e");
+      print("StackTrace: $stackTrace");
       throw GenericException();
     }
   }
 
-
-  WebSocketChannel get channel => _channel;
+  WebSocketChannel? get channel => _channel;
 }
