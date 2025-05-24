@@ -8,6 +8,7 @@ import 'package:tic_tac_toe/data_models/player.dart';
 
 class GameBloc extends Bloc<GameEvent, GameState> {
   final GameDataProvider _dataProvider;
+  final Player localPlayer;
 
   /// Winning combinations on the board
   final List<List<int>> _winningCombos = const [
@@ -23,7 +24,8 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
   late final Stream<GameMessage> _messageStream;
 
-  GameBloc(this._dataProvider) : super(InitialiseGameState()) {
+  GameBloc(this._dataProvider, this.localPlayer)
+    : super(InitialiseGameState()) {
     on<OnBoxTappedEvent>(_onBoxTapped);
     on<GameResetEvent>(_onGameReset);
 
@@ -44,7 +46,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
           return;
         }
 
-        add(OnBoxTappedEvent(index: event.index));
+        add(OnBoxTappedEvent(index: event.index, fromRemote: true));
       }
     });
   }
@@ -62,13 +64,26 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       return;
     }
 
+    if (!event.fromRemote) {
+      final isMyTurn = _isMyTurn(currentState);
+
+      if (!isMyTurn) {
+        print("[GameBloc] Not your turn, move ignored");
+        return;
+      }
+    }
+
     // Clone current board and queues for mutation
-    final Queue<int> currentXQueue = Queue<int>.from(currentState.playerXQueue ?? Queue<int>());
-    final Queue<int> currentOQueue = Queue<int>.from(currentState.playerOQueue ?? Queue<int>());
+    final Queue<int> currentXQueue = Queue<int>.from(
+      currentState.playerXQueue ?? Queue<int>(),
+    );
+    final Queue<int> currentOQueue = Queue<int>.from(
+      currentState.playerOQueue ?? Queue<int>(),
+    );
     final updatedBoard = List<Player>.from(currentState.gameBoard);
 
-    final isPlayerX = currentState is InitialiseGameState ||
-        (currentState is GameOnGoingState && currentState.isNextPlayerX);
+    final isPlayerX = _dataProvider.isOnline() ?  _isEventFromPlayerX(event.fromRemote) : currentState is InitialiseGameState ||
+      (currentState is GameOnGoingState && currentState.isNextPlayerX);
 
     // If cell already filled, ignore the tap
     if (updatedBoard[event.index] != Player.none) {
@@ -83,13 +98,17 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     if (activeQueue.length == 3) {
       final int toRemove = activeQueue.removeLast();
       updatedBoard[toRemove] = Player.none;
-      print("[GameBloc] Removed oldest mark at index $toRemove for player ${isPlayerX ? 'X' : 'O'}");
+      print(
+        "[GameBloc] Removed oldest mark at index $toRemove for player ${isPlayerX ? 'X' : 'O'}",
+      );
     }
 
     // Add new move
     updatedBoard[event.index] = isPlayerX ? Player.x : Player.o;
     activeQueue.addFirst(event.index);
-    print("[GameBloc] Player ${isPlayerX ? 'X' : 'O'} played at index ${event.index}");
+    print(
+      "[GameBloc] Player ${isPlayerX ? 'X' : 'O'} played at index ${event.index}",
+    );
 
     // Determine which box might be removed next for the opponent
     final opponentQueue = isPlayerX ? currentOQueue : currentXQueue;
@@ -108,15 +127,14 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     );
     emit(nextState);
 
-    // Notify opponent or mirror for offline mode
-    _dataProvider.sendMessage(MoveMessage(index: event.index));
+    // Only send the move if it was a local tap
+    if (!event.fromRemote) {
+      _dataProvider.sendMessage(MoveMessage(index: event.index));
+    }
   }
 
   /// Handles game reset locally or from remote
-  void _onGameReset(
-    GameResetEvent event,
-    Emitter<GameState> emit,
-  ) {
+  void _onGameReset(GameResetEvent event, Emitter<GameState> emit) {
     if (!event.fromRemote) {
       _dataProvider.sendMessage(MoveMessage(index: -1)); // Notify peer
       print("[GameBloc] Local reset, notifying opponent");
@@ -165,5 +183,21 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
     print("[GameBloc] Game ended in a draw");
     return GameDrawState(board, playerXQueue, playerOQueue);
+  }
+
+  bool _isMyTurn(GameState state) {
+    if (!_dataProvider.isOnline()) return true;
+
+    if (state is InitialiseGameState) {
+      return localPlayer == Player.x;
+    } else if (state is GameOnGoingState) {
+      return (state.isNextPlayerX && localPlayer == Player.x) ||
+          (!state.isNextPlayerX && localPlayer == Player.o);
+    }
+    return false;
+  }
+
+  bool _isEventFromPlayerX(bool fromRemote) {
+    return fromRemote ? localPlayer == Player.o : localPlayer == Player.x;
   }
 }

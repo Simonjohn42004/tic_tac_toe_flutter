@@ -8,11 +8,14 @@ abstract class GameEvent extends Equatable {
 
 class OnBoxTappedEvent extends GameEvent {
   final int index;
+  final bool fromRemote;
 
-  OnBoxTappedEvent({required this.index});
+  OnBoxTappedEvent({required this.index, this.fromRemote = false});
+
   @override
-  List<Object?> get props => [index];
+  List<Object?> get props => [index, fromRemote];
 }
+
 
 class GameResetEvent extends GameEvent {
   final bool fromRemote;

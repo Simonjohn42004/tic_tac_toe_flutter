@@ -7,7 +7,8 @@ import 'package:tic_tac_toe/backend/game_data/game_data_provider.dart';
 class FlutterWebSocketProvider extends GameDataProvider {
   final WebSocketClient _client;
 
-  FlutterWebSocketProvider({required WebSocketClient client}) : _client = client;
+  FlutterWebSocketProvider({required WebSocketClient client})
+    : _client = client;
 
   @override
   Future<Room> createRoom() async {
@@ -57,5 +58,10 @@ class FlutterWebSocketProvider extends GameDataProvider {
   void close() {
     print("[WebSocketProvider] Closing WebSocket connection.");
     _client.close();
+  }
+
+  @override
+  bool isOnline() {
+    return true;
   }
 }

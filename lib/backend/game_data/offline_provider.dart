@@ -6,6 +6,7 @@ import 'package:tic_tac_toe/data_models/room.dart';
 
 /// Simulates WebSocket communication in offline mode by using a local stream.
 class OfflineGameDataProvider extends GameDataProvider {
+  var currentPlayerX = true;
   final _streamController = StreamController<GameMessage>.broadcast();
 
   @override
@@ -37,5 +38,10 @@ class OfflineGameDataProvider extends GameDataProvider {
   void close() {
     print("Offline stream closed.");
     _streamController.close();
+  }
+
+  @override
+  bool isOnline() {
+    return false;
   }
 }

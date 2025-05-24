@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:tic_tac_toe/data_models/player.dart';
 
 import 'package:tic_tac_toe/utilities/app_constants.dart';
 import 'package:tic_tac_toe/backend/game_data/flutter_web_socket_provider.dart';
@@ -76,7 +77,7 @@ class HomePage extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => BlocProvider(
-                      create: (_) => GameBloc(provider),
+                      create: (_) => GameBloc(provider, Player.x),
                       child: const GameView(),
                     ),
                   ),
@@ -96,6 +97,7 @@ class HomePage extends StatelessWidget {
               onPressed: () {
                 final provider = FlutterWebSocketProvider(
                   client: WebSocketClient(),
+                  
                 );
                 Navigator.push(
                   context,

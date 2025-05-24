@@ -24,7 +24,9 @@ class WebSocketClient {
   /// Joins an existing room after verifying its existence.
   Future<void> joinRoom(Room room) async {
     try {
-      final response = await http.get(Uri.http(hostName, "$checkRoomPath/${room.roomId}"));
+      final response = await http.get(
+        Uri.http(hostName, "$checkRoomPath/${room.roomId}"),
+      );
 
       if (response.statusCode != 200) {
         throw RoomNotFoundException();
@@ -98,7 +100,6 @@ class WebSocketClient {
     }
   }
 
+
   WebSocketChannel get channel => _channel;
 }
-
-

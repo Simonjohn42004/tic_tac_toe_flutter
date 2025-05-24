@@ -10,21 +10,15 @@ abstract class GameState {
   GameState(this.gameBoard, this.playerXQueue, this.playerOQueue);
 }
 
-// The start of the game, when the board is emtpty
+// The start of the game, when the board is empty
 class InitialiseGameState extends GameState {
   bool isNextPlayerX = true;
+
   InitialiseGameState()
-    : super(
-        List.generate(
-          9,
-          (_) => Player.none,
-        ),
-        Queue<int>(),
-        Queue<int>(),
-      );
+    : super(List.generate(9, (_) => Player.none), Queue<int>(), Queue<int>());
 }
 
-// The game is won by one of the players state
+// The game is won by one of the players
 class GameWinState extends GameState {
   final Player player;
   List<int> winingIndices;
@@ -43,14 +37,16 @@ class GameDrawState extends GameState {
   GameDrawState(super.gameBoard, super.playerXQueue, super.playerOQueue);
 }
 
+// The game is ongoing state
 class GameOnGoingState extends GameState {
   final bool isNextPlayerX;
   final int? pendingRemovalBox;
+
   GameOnGoingState(
     super.gameBoard,
     super.playerXQueue,
     super.playerOQueue, {
     required this.isNextPlayerX,
-    required this.pendingRemovalBox,
+    required this.pendingRemovalBox,  
   });
 }

@@ -5,6 +5,7 @@ import 'package:tic_tac_toe/bloc/game_bloc/game_bloc.dart';
 import 'package:tic_tac_toe/bloc/web_connection_bloc/connection_bloc.dart';
 import 'package:tic_tac_toe/bloc/web_connection_bloc/connection_event.dart';
 import 'package:tic_tac_toe/bloc/web_connection_bloc/connection_state.dart';
+import 'package:tic_tac_toe/data_models/player.dart';
 
 import 'package:tic_tac_toe/utilities/join_room_alert_box.dart';
 import 'package:tic_tac_toe/views/error_alert_dialog.dart';
@@ -38,7 +39,7 @@ class _ConnectionPageState extends State<ConnectionPage> {
             MaterialPageRoute(
               builder:
                   (_) => BlocProvider(
-                    create: (_) => GameBloc(provider),
+                    create: (_) => GameBloc(provider, state is RoomCreatedSuccessfullyState ? Player.x : Player.o),
                     child: const GameView(),
                   ),
             ),

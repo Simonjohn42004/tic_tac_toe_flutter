@@ -17,7 +17,8 @@ abstract class GameDataProvider {
   /// Emits messages like moves, text messages, game over signals, etc.
   Stream<GameMessage> receiveData();
 
+  bool isOnline();
+
   /// Closes the WebSocket connection gracefully.
   void close();
 }
-
